@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#e1f4d8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="顧客ノート">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>GNP顧客ノート</title>
+<style>
+/* 春の公園: 若葉の緑、陽だまりのオレンジ、晴れた空の水色。いつ開いても明るいまま */
+:root{
+  --bg:#fbfdf5; --surface:#ffffff; --soft:#eef6e6; --line:#d6e3c8; --fg:#2b352c; --muted:#5f6d5a;
+  --green:#348a52; --green-soft:#e1f4d8; --orange:#c9661a; --orange-soft:#ffead3;
+  --blue:#2f7fb5; --blue-soft:#e0f0fb; --danger:#c94c3f; --danger-soft:#fde4e0;
+  --f-body:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","Zen Maru Gothic","BIZ UDPGothic","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  --f-num:"SF Mono","Menlo","Consolas",ui-monospace,monospace;
+  --r:20px; color-scheme:light;
+  --sky1:#d4f0c4; --sky2:#ffdcb0; --sky3:#fff3c4; --sky4:#fbfdf5; --sky5:#d6ecfa;
+  --glass:rgba(255,255,255,.80); --glass-line:#ffffff; --shadow:0 8px 28px rgba(120,150,90,.13);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.7;padding:max(36px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(64px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));min-height:100vh;
+  background:
+    radial-gradient(700px 520px at 92% 0%, var(--sky3) 0%, transparent 70%),
+    radial-gradient(800px 650px at 100% 18%, var(--sky2) 0%, transparent 65%),
+    radial-gradient(900px 700px at 0% 0%, var(--sky5) 0%, transparent 60%),
+    radial-gradient(1000px 700px at 20% 100%, var(--sky1) 0%, transparent 70%),
+    radial-gradient(800px 600px at 90% 100%, var(--sky1) 0%, transparent 70%),
+    var(--sky4)}
+body::before,body::after{content:"";position:fixed;border-radius:50%;filter:blur(2px);pointer-events:none;z-index:0}
+body::before{width:380px;height:380px;left:-110px;bottom:-130px;background:radial-gradient(circle at 40% 40%,#c4e9b0,transparent 70%);opacity:.8}
+body::after{width:300px;height:300px;right:-70px;top:-60px;background:radial-gradient(circle at 45% 55%,#fff0b8,transparent 70%)}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;display:grid;gap:18px}
+.plant{position:fixed;right:0;bottom:0;width:300px;height:430px;z-index:0;pointer-events:none;transform-origin:100% 100%;animation:sway 7s ease-in-out infinite}
+.plant canvas{display:block;width:100%;height:100%}
+@keyframes sway{0%,100%{transform:rotate(-.8deg)}50%{transform:rotate(.8deg)}}
+@media (max-width:760px){.plant{width:190px;height:272px;opacity:.85}}
+@media (prefers-reduced-motion:reduce){.plant{animation:none}*{transition:none!important}}
+
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+button,select,input,textarea{font:inherit;color:inherit}
+
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:26px;margin:0;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;gap:12px}
+h1 .mark{width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,var(--green),var(--blue));display:grid;place-items:center;font-size:18px;color:#fff;box-shadow:var(--shadow);transform:rotate(-6deg)}
+h1 small{display:block;font-size:12px;font-weight:400;color:var(--muted);letter-spacing:.08em}
+.datepill{background:var(--glass);border:1px solid var(--glass-line);border-radius:999px;padding:8px 18px;box-shadow:var(--shadow);font-weight:700}
+
+.btn{border:none;border-radius:999px;padding:8px 16px;cursor:pointer;background:var(--soft);color:var(--fg);transition:filter .15s,transform .15s}
+.btn:hover{filter:brightness(.97)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.co:focus-visible,.todo:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.btn.sm{padding:6px 14px;font-size:13px;background:var(--glass);border:1px solid var(--glass-line);color:var(--fg);font-weight:500}
+.btn.main{background:linear-gradient(135deg,#3f9a5e,#2c7a47);color:#fff;font-weight:700;padding:12px 24px;box-shadow:0 6px 18px rgba(52,138,82,.30);text-shadow:0 1px 1px rgba(0,0,0,.15)}
+.btn.sub{background:linear-gradient(135deg,#d97a28,#b65a10);color:#fff;font-weight:700;padding:12px 24px;box-shadow:0 6px 18px rgba(201,102,26,.30);text-shadow:0 1px 1px rgba(0,0,0,.15)}
+.btn.main:hover,.btn.sub:hover{transform:translateY(-1px)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:#fff}
+.btn .plus{display:inline-block;margin-right:6px;font-weight:700}
+
+.savebox{display:grid;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.savestate{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+.savestate.warn .dot{background:var(--orange)} .savestate.warn{color:var(--fg)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.sample{background:var(--glass);border:1px dashed var(--orange);border-radius:var(--r);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:14px}
+
+.glass{background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);border-radius:var(--r)}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.sum{padding:16px 18px;display:grid;gap:2px;position:relative;overflow:hidden}
+.sum::after{content:"";position:absolute;width:110px;height:110px;border-radius:50%;right:-30px;top:-40px}
+.sum.s1::after{background:var(--danger-soft)} .sum.s2::after{background:var(--orange-soft)} .sum.s3::after{background:var(--green-soft)} .sum.s4::after{background:var(--blue-soft)}
+.sum>*{position:relative;z-index:1}
+.sum .lbl{font-size:13px;color:var(--muted)}
+.sum .val{font-size:clamp(22px,3.4vw,30px);font-weight:600;line-height:1.3}
+.sum.s1 .val{color:var(--danger)} .sum.s2 .val{color:var(--orange)} .sum.s3 .val{color:var(--green)} .sum.s4 .val{color:var(--blue)}
+.sum .note{font-size:12px;color:var(--muted)}
+
+.panel{padding:20px;display:grid;gap:12px;min-width:0;align-content:start}
+.panel h2{font-size:15px;margin:0;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.panel h2 small{font-size:12px;color:var(--muted);font-weight:400}
+
+/* 次にやること */
+.todos{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.todo{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;display:grid;gap:2px;cursor:pointer;text-align:left;position:relative}
+.todo:hover{border-color:var(--green)}
+.todo .when{font-size:12px;font-weight:700;display:flex;justify-content:space-between;gap:6px}
+.todo.over{border-left:5px solid var(--danger)} .todo.over .when{color:var(--danger)}
+.todo.today{border-left:5px solid var(--orange)} .todo.today .when{color:var(--orange)}
+.todo.soon{border-left:5px solid var(--green)} .todo.soon .when{color:var(--green)}
+.todo .co-name{font-weight:700}
+.todo .last{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo .done{font-size:12px;border:none;background:var(--soft);border-radius:999px;padding:1px 10px;cursor:pointer;color:var(--fg)}
+.todo .done:hover{background:var(--green-soft);color:var(--green)}
+
+/* 本体 */
+.cols{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.filters{display:grid;gap:8px}
+.filters input,.filters select{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;width:100%;min-width:0}
+.filters .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.colist{display:grid;gap:6px;max-height:640px;overflow:auto;padding:2px}
+.co{border:1px solid transparent;background:var(--surface);border-radius:14px;padding:10px 12px;cursor:pointer;text-align:left;display:grid;gap:2px;width:100%}
+.co:hover{border-color:var(--line)}
+.co.sel{border-color:var(--green);background:var(--green-soft)}
+.co .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.co .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.co .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.co .nx{font-size:12px;white-space:nowrap}
+.nx.over{color:var(--danger);font-weight:700} .nx.today{color:var(--orange);font-weight:700} .nx.soon{color:var(--green)}
+.count{font-size:12px;color:var(--muted)}
+
+.chip{display:inline-block;font-size:12px;padding:1px 10px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line)}
+.chip.area{background:var(--blue-soft);border-color:transparent;color:var(--blue)}
+.chip.g{background:var(--orange-soft);border-color:transparent;color:var(--orange)}
+.tag{font-size:11px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:0 5px;margin-left:4px;font-weight:400}
+
+.detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.detail-head h3{margin:0;font-size:22px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.info div{background:var(--surface);padding:8px 12px;display:grid;min-width:0}
+.info span{font-size:12px;color:var(--muted)}
+.info b{font-weight:500;overflow-wrap:anywhere}
+.info .wide{grid-column:1/-1}
+@media (max-width:560px){.info{grid-template-columns:minmax(0,1fr)}}
+.nextbox{border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--green-soft)}
+.nextbox.over{background:var(--danger-soft)} .nextbox.today{background:var(--orange-soft)} .nextbox.none{background:var(--soft)}
+
+.timeline{display:grid;gap:0;position:relative;padding-left:22px}
+.timeline::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--line);border-radius:2px}
+.ev{position:relative;padding:4px 0 14px}
+.ev::before{content:"";position:absolute;left:-20px;top:10px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--green)}
+.ev.t-電話::before{border-color:var(--blue)} .ev.t-メール::before{border-color:var(--orange)} .ev.t-オンライン::before{border-color:#7b67c4} .ev.t-展示会::before{border-color:#c4679a}
+.ev .h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.ev .d{font-weight:700}
+.ev .body{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ev .nxt{font-size:12px;color:var(--muted);margin-top:4px}
+.ev .del{border:none;background:none;color:var(--muted);cursor:pointer;padding:0 8px;border-radius:999px;font-size:12px;margin-left:auto}
+.ev .del:hover{color:var(--danger);background:var(--soft)}
+.ev .del.confirm{color:#fff;background:var(--danger)}
+.empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:14px}
+.status{font-size:13px;color:var(--muted);min-height:1.4em;text-align:center}
+
+/* 入力画面 */
+dialog{border:none;border-radius:22px;padding:0;width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 40px);background:var(--surface);color:var(--fg);box-shadow:0 20px 60px rgba(90,120,70,.25)}
+dialog::backdrop{background:rgba(240,248,230,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.dlg-head{padding:16px 22px;font-weight:700;font-size:17px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2}
+.dlg-head.g{background:var(--green-soft);color:var(--green)} .dlg-head.o{background:var(--orange-soft);color:var(--orange)}
+.dlg-head button{border:none;background:none;font-size:20px;color:inherit;cursor:pointer;width:32px;height:32px;border-radius:50%}
+form.entry{padding:18px 22px 22px;display:grid;gap:12px}
+.field{display:grid;gap:4px}
+.field>span{font-size:13px;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:9px 12px;width:100%;min-width:0}
+.field textarea{resize:vertical;min-height:90px;line-height:1.6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.pick label{cursor:pointer}
+.pick input{position:absolute;opacity:0;pointer-events:none}
+.pick span{display:inline-block;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-size:13px}
+.pick input:checked+span{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+.pick input:focus-visible+span{outline:2px solid var(--blue);outline-offset:2px}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 10px;font-size:12px;cursor:pointer}
+.quick button:hover{border-color:var(--green);color:var(--green)}
+.msg{font-size:13px;min-height:1.3em;color:var(--danger)}
+.dlg-actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dlg-actions .r{display:flex;gap:8px;margin-left:auto}
+.hint{font-size:12px;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:5}
+.toast.show{opacity:1}
+a.btn{text-decoration:none;display:inline-block}
+.syncbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.savestate.busy .dot{background:var(--blue);animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.back{display:none}
+@media (max-width:860px){
+  .back{display:inline-block}
+  body{padding:max(20px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(48px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+  .panel{padding:16px}
+  h1{font-size:22px}
+  .actions .btn.main,.actions .btn.sub{flex:1;text-align:center}
+  .actions>.row:first-child{width:100%}
+  .plant{opacity:.45}
+  .colist{max-height:none}
+}
+/* 鍵の画面 */
+.gate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow:auto;padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+  background:radial-gradient(700px 520px at 92% 0%,var(--sky3) 0%,transparent 70%),radial-gradient(800px 650px at 100% 18%,var(--sky2) 0%,transparent 65%),radial-gradient(900px 700px at 0% 0%,var(--sky5) 0%,transparent 60%),radial-gradient(1000px 700px at 20% 100%,var(--sky1) 0%,transparent 70%),var(--sky4)}
+.gate-card{width:min(420px,100%);padding:26px 22px;display:grid;gap:14px}
+.gate-mark{width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,var(--green),var(--blue));display:grid;place-items:center;font-size:26px;color:#fff;box-shadow:var(--shadow);transform:rotate(-6deg);margin:0 auto}
+.gate h2{margin:0;text-align:center;font-size:20px}
+.gate form{display:grid;gap:12px}
+.gate .hint{margin:0;text-align:center;font-size:13px;line-height:1.7}
+.gate .field input{background:var(--surface)}
+input.pin{font-size:28px;letter-spacing:.5em;text-align:center;padding:10px 12px 10px calc(12px + .5em);border:1px solid var(--line);border-radius:14px;background:var(--surface);width:100%;font-family:var(--f-num)}
+.linkbtn{border:none;background:none;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px;justify-self:center}
+.gate .btn.main{width:100%}
+body.locked .wrap,body.locked .plant,body.cover .wrap{visibility:hidden}
+.badge{font-size:12px;font-weight:700;background:var(--orange-soft);color:var(--orange);border-radius:999px;padding:2px 10px}
+.hdr-r{display:flex;gap:8px;align-items:center}
+.set-sec{display:grid;gap:8px;border-top:1px dashed var(--line);padding-top:12px}
+.set-sec h3{margin:0;font-size:14px}
+.kv{font-size:13px;color:var(--muted);display:grid;gap:2px}
+.kv b{color:var(--fg);font-weight:500;overflow-wrap:anywhere}
+.setdlg{padding:18px 22px 22px;display:grid;gap:14px}
+.grow{flex:1;min-width:160px}
+.stmsg{grid-column:1/-1}
+</style>
+</head>
+<body class="locked">
+<div class="gate" id="gate">
+  <div class="gate-card glass">
+    <div class="gate-mark" aria-hidden="true">✎</div>
+    <h2>GNP顧客ノート</h2>
+    <p class="hint" id="gateNote" hidden></p>
+
+    <form id="setupForm" hidden novalidate>
+      <p class="hint">はじめに、スプレッドシートとつなぐ設定をします。<br>ここで入れた内容は、この端末の中に暗号化して保存します。</p>
+      <label class="field"><span>接続先URL（ウェブアプリのURL）</span><input id="sUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec"></label>
+      <label class="field"><span>合言葉</span><input id="sToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>この端末のPIN（数字6桁）</span><input id="sPin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password"></label>
+      <label class="field"><span>PINをもう一度</span><input id="sPin2" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password"></label>
+      <div class="msg" id="sMsg" role="alert"></div>
+      <button class="btn main" type="submit" id="sSubmit">つないで始める</button>
+    </form>
+
+    <form id="unlockForm" hidden novalidate>
+      <p class="hint">PINを入れてください</p>
+      <input id="uPin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" aria-label="PIN">
+      <div class="msg" id="uMsg" role="alert"></div>
+      <button class="btn main" type="submit" id="uSubmit">開く</button>
+      <button type="button" class="linkbtn" id="forgot">PINを忘れたとき</button>
+      <div id="forgotBox" hidden class="kv">
+        <span>PINは元に戻せません。この端末の中のデータを消して、設定からやり直してください。スプレッドシートのデータは消えません（まだ送れていない記録だけは消えます）。</span>
+        <button type="button" class="btn danger" id="wipeGate">この端末のデータを消してやり直す</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="wrap">
+  <header>
+    <h1><span class="mark">✎</span><span>GNP顧客ノート</span></h1>
+    <div class="hdr-r"><div class="datepill num" id="todayLbl">—</div><button class="btn sm" id="openSettings" aria-label="設定">⚙ 設定</button></div>
+  </header>
+
+  <div class="syncbar">
+    <div class="savestate busy" id="saveState"><span class="dot"></span><span id="saveText">読み込み中…</span></div>
+    <span class="badge" id="pendingBadge" hidden></span>
+    <div class="row">
+      <button class="btn sm" id="reloadBtn">同期</button>
+      <a class="btn sm" id="openSheet" target="_blank" rel="noopener" hidden>スプレッドシートを開く</a>
+    </div>
+  </div>
+
+  <div class="actions">
+    <div class="row">
+      <button class="btn main" id="openContact"><span class="plus">＋</span>接触を記録</button>
+      <button class="btn sub" id="openCompany"><span class="plus">＋</span>会社を追加</button>
+    </div>
+    <div class="row">
+      <button class="btn sm" id="csvIn">CSVで会社を取り込む</button>
+      <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+      <button class="btn sm" id="migrate">PC版のデータを移す</button>
+      <input type="file" id="migrateFile" accept=".json,application/json" hidden>
+    </div>
+  </div>
+
+  <section class="summary" aria-label="今の状況">
+    <div class="sum glass s1"><span class="lbl">連絡が遅れている</span><span class="val num" id="kOver">0</span><span class="note">次回接触日を過ぎた会社</span></div>
+    <div class="sum glass s2"><span class="lbl">今日・今週の予定</span><span class="val num" id="kWeek">0</span><span class="note" id="kWeekNote">今日 0件</span></div>
+    <div class="sum glass s3"><span class="lbl">今月の接触</span><span class="val num" id="kMonth">0</span><span class="note" id="kMonthNote">&nbsp;</span></div>
+    <div class="sum glass s4"><span class="lbl">登録している会社</span><span class="val num" id="kCo">0</span><span class="note" id="kCoNote">&nbsp;</span></div>
+  </section>
+
+  <section class="panel glass">
+    <h2><span>次にやること</span><small>次回接触日が近い順（2週間先まで）</small></h2>
+    <div class="todos" id="todos"></div>
+  </section>
+
+  <div class="cols">
+    <section class="panel glass">
+      <h2><span>会社一覧</span><span class="count" id="coCount"></span></h2>
+      <div class="filters">
+        <input type="search" id="q" placeholder="会社名・担当者・メモで探す" aria-label="検索">
+        <div class="two">
+          <select id="fArea" aria-label="エリア"><option value="">エリア：すべて</option></select>
+          <select id="fGenre" aria-label="取引製品ジャンル"><option value="">ジャンル：すべて</option></select>
+        </div>
+        <select id="sort" aria-label="並び順">
+          <option value="next">並び順：次回接触日が近い順</option>
+          <option value="last">並び順：最近会った順</option>
+          <option value="long">並び順：しばらく会っていない順</option>
+          <option value="name">並び順：会社名順</option>
+        </select>
+      </div>
+      <div class="colist" id="colist"></div>
+    </section>
+
+    <section class="panel glass" id="detail"></section>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<!-- 接触を記録 -->
+<dialog id="dlgContact" aria-labelledby="dcT">
+  <div class="dlg-head g"><span id="dcT">接触を記録</span><button type="button" data-close aria-label="閉じる">×</button></div>
+  <form class="entry" id="formContact" novalidate>
+    <label class="field"><span>会社</span>
+      <input type="text" id="cCompany" list="coNames" placeholder="会社名を入力して選ぶ" autocomplete="off">
+      <datalist id="coNames"></datalist>
+    </label>
+    <div class="row2">
+      <label class="field"><span>日付</span><input type="date" id="cDate"></label>
+      <label class="field"><span>担当者</span><input type="text" id="cPerson" list="personList" placeholder="例 山田部長" maxlength="40"><datalist id="personList"></datalist></label>
+    </div>
+    <div class="field"><span>接触形態</span>
+      <div class="pick" id="cType"></div>
+    </div>
+    <label class="field"><span>内容</span><textarea id="cContent" placeholder="話したこと、相手の反応、宿題など"></textarea></label>
+    <div class="field"><span>次回接触日</span>
+      <input type="date" id="cNext">
+      <div class="quick" id="cQuick">
+        <button type="button" data-d="7">1週間後</button><button type="button" data-d="14">2週間後</button>
+        <button type="button" data-m="1">1か月後</button><button type="button" data-m="3">3か月後</button><button type="button" data-d="">決めない</button>
+      </div>
+    </div>
+    <div class="msg" id="cMsg" role="alert"></div>
+    <div class="dlg-actions"><div class="r"><button type="button" class="btn" data-close>やめる</button><button type="submit" class="btn main">記録する</button></div></div>
+  </form>
+</dialog>
+
+<!-- 会社を追加・編集 -->
+<dialog id="dlgCompany" aria-labelledby="dkT">
+  <div class="dlg-head o"><span id="dkT">会社を追加</span><button type="button" data-close aria-label="閉じる">×</button></div>
+  <form class="entry" id="formCompany" novalidate>
+    <label class="field"><span>会社名</span><input type="text" id="kName" placeholder="例 〇〇食品株式会社" maxlength="60"></label>
+    <div class="row2">
+      <label class="field"><span>エリア</span><select id="kArea"></select></label>
+      <label class="field"><span>都道府県・市町村</span><input type="text" id="kPref" placeholder="例 大阪府堺市" maxlength="30"></label>
+    </div>
+    <label class="field"><span>住所</span><input type="text" id="kAddr" maxlength="100"></label>
+    <div class="row2">
+      <label class="field"><span>電話番号</span><input type="tel" id="kTel" maxlength="20"></label>
+      <label class="field"><span>業種</span><input type="text" id="kIndustry" placeholder="例 惣菜、菓子、冷凍食品" maxlength="30"></label>
+    </div>
+    <div class="field"><span>取引製品ジャンル（いくつでも）</span>
+      <div class="pick" id="kGenres"></div>
+      <input type="text" id="kGenreOther" placeholder="ほかにあれば（読点で区切る）" maxlength="60">
+    </div>
+    <label class="field"><span>担当者（1行に1人。「名前 役職」の形）</span><textarea id="kStaff" placeholder="山田 太郎 購買部長&#10;佐藤 花子 品質管理" style="min-height:70px"></textarea></label>
+    <label class="field"><span>メモ</span><textarea id="kMemo" placeholder="訪問のコツ、駐車場、決裁の流れなど" style="min-height:70px"></textarea></label>
+    <div class="msg" id="kMsg" role="alert"></div>
+    <div class="dlg-actions">
+      <button type="button" class="btn danger" id="kDelete" hidden>この会社を削除</button>
+      <div class="r"><button type="button" class="btn" data-close>やめる</button><button type="submit" class="btn sub" id="kSubmit">追加する</button></div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+<div class="plant" aria-hidden="true"><canvas id="plantCv"></canvas></div>
+
+<!-- 設定 -->
+<dialog id="dlgSettings" aria-labelledby="dsT">
+  <div class="dlg-head g"><span id="dsT">設定</span><button type="button" data-close aria-label="閉じる">×</button></div>
+  <div class="setdlg">
+    <div class="kv"><span>接続先</span><b id="stUrl">—</b><span>最後に同期した時刻</span><b id="stSync">—</b><span>まだ送れていない記録</span><b id="stPending">—</b></div>
+    <div class="row"><button type="button" class="btn main" id="lockNow">今すぐロック</button>
+      <label class="field grow"><span>使っていないときの自動ロック</span><select id="stLock"><option value="1">1分</option><option value="5">5分</option><option value="10">10分</option><option value="30">30分</option></select></label></div>
+    <div class="set-sec"><h3>PINを変える</h3>
+      <div class="row2"><input id="stPin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" aria-label="新しいPIN" placeholder="新PIN"><input id="stPin2" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" aria-label="新しいPINをもう一度" placeholder="もう一度"></div>
+      <button type="button" class="btn sm" id="stPinSave">PINを変える</button></div>
+    <div class="set-sec"><h3>接続先・合言葉を入れ直す</h3>
+      <span class="hint">スプレッドシートで合言葉を作り直したときに使います。</span>
+      <label class="field"><span>接続先URL</span><input id="stUrlIn" type="url" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>新しい合言葉</span><input id="stToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <button type="button" class="btn sm" id="stConnSave">保存して同期</button></div>
+    <div class="set-sec"><h3>この端末のデータを消す</h3>
+      <span class="hint">端末を手放すときや、やり直したいときに。スプレッドシートのデータは消えません。</span>
+      <button type="button" class="btn danger" id="wipeSettings">この端末のデータを消す</button></div>
+    <div class="msg" id="stMsg" role="alert"></div>
+  </div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
